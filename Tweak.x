@@ -1,11 +1,7 @@
 // Logos by Dustin Howett
 // See http://iphonedevwiki.net/index.php/Logos
 
-#define kBundlePath @"/Library/MobileSubstrate/DynamicLibraries/com.isklikas.3DBadgeClear-resources.bundle"
-#define preferencesPath @"/var/mobile/Library/Preferences/com.isklikas.3dbadgeclearprefs.plist"
-#define noctisEnabledPath @"/var/mobile/Library/Preferences/com.laughingquoll.noctis.plist"
-#define noctis12EnabledPath @"/var/mobile/Library/Preferences/com.laughingquoll.noctis12prefs.plist"
-#define eclipsePath @"/var/mobile/Library/Preferences/com.gmoran.eclipse.plist"
+#define kBundlePath @"/var/jb/Library/MobileSubstrate/DynamicLibraries/com.isklikas.3DBadgeClear-resources.bundle"
 
 #import "SBSApplicationShortcutItem.h"
 
@@ -38,56 +34,6 @@
 @end
 
 %hook SBIconController
-
-//iOS 10-12 Method
-//Maybe folders use a different method? Or have a different method since I can not use the bundle ID. 
-//I would appreciate some help, or a tester on iOS 12 or below.
-- (id)appIconForceTouchController:(id)arg1 applicationShortcutItemsForGestureRecognizer:(id)arg2 {
-	NSArray *shortcutItems = %orig(arg1, arg2);
-	NSString *bundleID = [self appIconForceTouchController:arg1 applicationBundleIdentifierForGestureRecognizer:arg2];
-	if (bundleID) {
-		id app = [[objc_getClass("SBApplicationController") sharedInstance] applicationWithBundleIdentifier:bundleID];
-		//The app object knows if there is a badge or not
-		id badgeValue;
-		if ([app respondsToSelector:@selector(badgeValue)]) {
-			//iOS 12.1 Method
-			badgeValue = [app performSelector:@selector(badgeValue)];
-		} else {
-			//iOS 7 - 12.0 Method
-			badgeValue = [app performSelector:@selector(iconBadgeNumberOrString)];
-		}
-		if (!badgeValue) /* badgeValue is null when badge is zero */ {
-			return shortcutItems;
-		}
-		NSMutableArray *arrayWithClearBadges = [self performSelector:@selector(arrayWithClearItem:forFolder:) withObject: shortcutItems withObject:[NSNumber numberWithBool:FALSE]];
-		return arrayWithClearBadges;
-	}
-	else {
-		//It is probably a folder then.
-		return shortcutItems;
-	}
-}
-
-//iOS 10-12 Method
-- (BOOL)appIconForceTouchController:(id)arg1 shouldActivateApplicationShortcutItem:(id)arg2 atIndex:(unsigned long long)arg3 forGestureRecognizer:(id)arg4 {
-	BOOL shouldActivate = %orig(arg1, arg2, arg3, arg4);
-	NSString *shortcutType = [arg2 performSelector:@selector(type)];
-	if ([shortcutType isEqualToString:@"com.isklikas.springboardhome.application-shotcut-item.clear-badges"]) {
-		NSString *bundleID = [self appIconForceTouchController:arg1 applicationBundleIdentifierForGestureRecognizer:arg4];
-		id app = [[objc_getClass("SBApplicationController") sharedInstance] applicationWithBundleIdentifier:bundleID];
-		if ([app respondsToSelector:@selector(setBadgeValue:)]) /* iOS 12.1 Method */ {
-			[app performSelector:@selector(setBadgeValue:) withObject: nil];
-		}
-		else if ([app respondsToSelector:@selector(setBadgeNumberOrString:)]) /* iOS 11 Method */ {
-			[app performSelector:@selector(setBadgeNumberOrString:) withObject: nil];
-		}
-		else if ([app respondsToSelector:@selector(setBadge:)]) /* iOS 7 - 10.2 Method */ {
-			[app performSelector:@selector(setBadge:) withObject: nil];
-		}
-		return FALSE;
-	}
-	return shouldActivate;
-}
 
 //iOS 13+ Method
 - (BOOL)iconManager:(id)arg1 shouldActivateApplicationShortcutItem:(id)arg2 atIndex:(unsigned long long)arg3 forIconView:(id)arg4 {
@@ -152,28 +98,11 @@
 	//Get the appropriate custom image
 	NSBundle *bundle = [[NSBundle alloc] initWithPath:kBundlePath];
 	UIImage *myImage = [UIImage imageNamed:@"clearbadge" inBundle:bundle compatibleWithTraitCollection:nil];
-	if (@available(iOS 13.0, *)) {
-    	BOOL isInDarkMode = ([[UITraitCollection currentTraitCollection] userInterfaceStyle] == UIUserInterfaceStyleDark);
-		if (isInDarkMode) {
-			myImage = [UIImage imageNamed:@"clearbadge-dark" inBundle:bundle compatibleWithTraitCollection:nil];
-		}
+	BOOL isInDarkMode = ([[UITraitCollection currentTraitCollection] userInterfaceStyle] == UIUserInterfaceStyleDark);
+	if (isInDarkMode) {
+		myImage = [UIImage imageNamed:@"clearbadge-dark" inBundle:bundle compatibleWithTraitCollection:nil];
 	}
-	else {
-		//Let's check for various popular tweaks, if they are enabled!
-		//Noctis has 2 of them
-		NSDictionary *noctisPrefs = [[NSDictionary alloc] initWithContentsOfFile:noctisEnabledPath];
-		NSDictionary *noctis12Prefs = [[NSDictionary alloc] initWithContentsOfFile:noctis12EnabledPath];
-		BOOL isNoctisEnabled = ([[noctisPrefs objectForKey:@"LQDDarkModeEnabled"] boolValue] || [[noctis12Prefs objectForKey:@"enabled"] boolValue]);
-		
-		//Eclipse
-		NSDictionary *eclipsePrefs = [[NSDictionary alloc] initWithContentsOfFile:eclipsePath];
-		BOOL isEclipseEnabled = [[eclipsePrefs objectForKey:@"enabled"] boolValue];
-		
-		if (isNoctisEnabled || isEclipseEnabled) {
-			myImage = [UIImage imageNamed:@"clearbadge-dark" inBundle:bundle compatibleWithTraitCollection:nil];
-		}
-		
-	}
+
 	id customIcon = [[objc_getClass("SBSApplicationShortcutCustomImageIcon") alloc] initWithImagePNGData: UIImagePNGRepresentation(myImage)];
 	
 	//Make the clear shortcut
@@ -183,14 +112,12 @@
 	*/
 	id clearItem = [[objc_getClass("SBSApplicationShortcutItem") alloc] init];
 	[clearItem performSelector:@selector(setType:) withObject:@"com.isklikas.springboardhome.application-shotcut-item.clear-badges"];
-    NSString *bPath = [bundle pathForResource:@"Translations" ofType:@"bundle"];
-    NSBundle *tBundle = [[NSBundle alloc] initWithPath:bPath];
     NSString *clearBadge = @"";
     if ([isFolder boolValue]) {
-    	clearBadge = NSLocalizedStringFromTableInBundle(@"Clear_Badges", nil, tBundle, nil);
+    	clearBadge = @"Clear Badges";
     }
     else {
-    	clearBadge = NSLocalizedStringFromTableInBundle(@"Clear_Badge", nil, tBundle, nil);
+    	clearBadge = @"Clear Badge";
     }
 	[clearItem performSelector:@selector(setLocalizedTitle:) withObject:clearBadge];
 	[clearItem performSelector:@selector(setLocalizedSubtitle:) withObject:nil];
@@ -204,12 +131,7 @@
 	send_type setOffsetIMP = (send_type)[objc_getClass("SBSApplicationShortcutItem") instanceMethodForSelector:setOffsetSEL];
 	setOffsetIMP((__bridge void*)clearItem, setOffsetSEL, 0);
 
-	//First or last option
-	NSDictionary *ourPrefs = [[NSDictionary alloc] initWithContentsOfFile:preferencesPath];
 	BOOL appearsLast = TRUE;
-	if (ourPrefs) {
-		appearsLast = [[ourPrefs objectForKey:@"appearsLast"] boolValue];
-	}
 	
 	NSMutableArray *arrayWithClearBadges;
 	if (appearsLast) {
