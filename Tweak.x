@@ -114,10 +114,10 @@
 	[clearItem performSelector:@selector(setType:) withObject:@"com.isklikas.springboardhome.application-shotcut-item.clear-badges"];
     NSString *clearBadge = @"";
     if ([isFolder boolValue]) {
-    	clearBadge = @"Clear Badges";
+    	clearBadge = @"清理角标";
     }
     else {
-    	clearBadge = @"Clear Badge";
+    	clearBadge = @"清理角标";
     }
 	[clearItem performSelector:@selector(setLocalizedTitle:) withObject:clearBadge];
 	[clearItem performSelector:@selector(setLocalizedSubtitle:) withObject:nil];

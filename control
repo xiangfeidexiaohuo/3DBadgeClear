@@ -1,12 +1,11 @@
-Package: com.twickd.john-sklikas.3dbadgeclear
-Name: 3DBadgeClear
+Package: com.dao.3dbadgeclear
+Name: 3DBadgeClear(rootless)
 Depends: firmware (>= 13.0), mobilesubstrate
-Provides: com.isklikas.3dbadgeclear
-Conflicts: com.isklikas.3dbadgeclear
-Replaces: com.isklikas.3dbadgeclear
-Version: 1.6.8
+Conflicts: com.isklikas.3dbadgeclear, com.twickd.john-sklikas.3dbadgeclear
+Version: 1.6.8.1
 Architecture: iphoneos-arm
-Description: Clear your badges from the Force Touch / 3D Touch Menu! Only appears on apps that have badges.
+Description: 在有通知角标的程序图标的“长按/3D Touch”菜单上出现“清除角标”，可一键清除此程序的所有通知角标。
 Maintainer: isklikas
 Author: isklikas
-Section: Tweaks
+Section: 嗨-工具
+
